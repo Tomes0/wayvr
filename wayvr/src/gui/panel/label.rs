@@ -220,9 +220,24 @@ fn clock_on_tick(
     common: &mut event::CallbackDataCommon,
     data: &mut event::CallbackData,
 ) {
+    let locale = {
+        let binding = common.i18n();
+        let locale = binding.get_locale();
+        match pure_rust_locales::Locale::try_from(locale.to_string().as_str()) {
+            Ok(loc) => loc,
+            Err(_) => pure_rust_locales::Locale::en_US,
+        }
+    };
     let date_time = state.timezone.as_ref().map_or_else(
-        || format!("{}", Local::now().format(&state.format)),
-        |tz| format!("{}", Local::now().with_timezone(tz).format(&state.format)),
+        || format!("{}", Local::now().format_localized(&state.format, locale)),
+        |tz| {
+            format!(
+                "{}",
+                Local::now()
+                    .with_timezone(tz)
+                    .format_localized(&state.format, locale)
+            )
+        },
     );
 
     let label = data.obj.get_as_mut::<WidgetLabel>().unwrap();
