@@ -163,7 +163,7 @@ impl<T> Tab<T> for TabSettings<T> {
 				}
 				Task::SettingUpdated(setting) => match setting {
 					SettingType::UiAnimationSpeed | SettingType::UiGradientIntensity | SettingType::UiRoundMultiplier => {
-						frontend.tasks.push(FrontendTask::UpdateWguiDefaultsFromConfig);
+						// todo: currently, wayvr restart is required to apply these changes (WguiTheme is Rc)
 					}
 					_ => { /* do nothing */ }
 				},
@@ -426,16 +426,17 @@ impl SettingType {
 	}
 
 	fn requires_restart(self) -> bool {
-		match self {
+		matches!(
+			self,
 			Self::UiAnimationSpeed
-			| Self::UiRoundMultiplier
-			| Self::UprightScreenFix
-			| Self::DoubleCursorFix
-			| Self::ScreenRenderDown
-			| Self::Language
-			| Self::CaptureMethod => true,
-			_ => false,
-		}
+				| Self::UiRoundMultiplier
+				| Self::UiGradientIntensity
+				| Self::UprightScreenFix
+				| Self::DoubleCursorFix
+				| Self::ScreenRenderDown
+				| Self::Language
+				| Self::CaptureMethod
+		)
 	}
 
 	fn get_frontend_task(self) -> Option<FrontendTask> {
@@ -466,7 +467,7 @@ fn horiz_cell(layout: &mut Layout, parent: WidgetID) -> anyhow::Result<WidgetID>
 fn mount_requires_restart(layout: &mut Layout, parent: WidgetID) -> anyhow::Result<()> {
 	let content = Translation::from_translation_key("APP_SETTINGS.REQUIRES_RESTART");
 	let label = WidgetLabel::create(
-		&mut layout.state.globals.get(),
+		&mut layout.state,
 		WidgetLabelParams {
 			content,
 			style: TextStyle {
